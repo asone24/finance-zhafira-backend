@@ -73,6 +73,42 @@ app.get("/init-db", async (req, res) => {
   }
 });
 
+// Tambah transaksi
+app.post("/transactions", async (req, res) => {
+  try {
+    const { description, amount, type } = req.body;
+
+    if (!description || !amount || !type) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    if (!["income", "expense"].includes(type)) {
+      return res.status(400).json({ error: "Type must be income or expense" });
+    }
+
+    const result = await pool.query(
+      "INSERT INTO transactions (description, amount, type) VALUES ($1, $2, $3) RETURNING *",
+      [description, amount, type]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Ambil semua transaksi
+app.get("/transactions", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM transactions ORDER BY created_at DESC"
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
