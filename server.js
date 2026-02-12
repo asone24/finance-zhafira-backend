@@ -109,6 +109,32 @@ app.get("/transactions", async (req, res) => {
   }
 });
 
+// Laporan keuangan summary
+app.get("/report/summary", async (req, res) => {
+  try {
+    const incomeResult = await pool.query(
+      "SELECT COALESCE(SUM(amount),0) as total FROM transactions WHERE type = 'income'"
+    );
+
+    const expenseResult = await pool.query(
+      "SELECT COALESCE(SUM(amount),0) as total FROM transactions WHERE type = 'expense'"
+    );
+
+    const totalIncome = parseFloat(incomeResult.rows[0].total);
+    const totalExpense = parseFloat(expenseResult.rows[0].total);
+    const netProfit = totalIncome - totalExpense;
+
+    res.json({
+      total_income: totalIncome,
+      total_expense: totalExpense,
+      net_profit: netProfit
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
